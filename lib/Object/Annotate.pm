@@ -198,8 +198,6 @@ sub build_annotator {
       $attr{$_} = $arg->{$_};
     }
 
-    use Data::Dump::Streamer; Dump(\%attr);
-
     $class->create({
       class     => $obj_class,
       object_id => $id,
