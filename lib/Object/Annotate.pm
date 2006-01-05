@@ -151,6 +151,8 @@ sub construct_class {
   # -- rjbs, 2006-01-05
   $new_class->sequence("$arg->{table}_id_seq");
 
+  $new_class->db_Main->{ AutoCommit } = 1;
+
   return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
 }
 
