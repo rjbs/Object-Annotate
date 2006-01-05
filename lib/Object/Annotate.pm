@@ -15,6 +15,8 @@ version 0.01
 
 =cut
 
+our $VERSION = '0.01';
+
 use Carp;
 use Sub::Install;
 use UNIVERSAL::moniker;
@@ -48,7 +50,7 @@ my $class_for = {};
 my $current_suffix = 0;
 
 my %note_columns = (
-  auto   => [ qw(id class object_id note_time) ],
+  auto   => [ qw(note_id class object_id note_time) ],
   manual => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
@@ -124,19 +126,16 @@ sub construct_class {
   my $new_class
     = sprintf 'Object::Annotate::Construct_%04x', ++$current_suffix;
 
+  require Class::DBI;
   do {
-    # This really shouldn't die, but if it does, we don't want to hide it.
-    eval "package $new_class";
-    croak @_ if @_;
-
-    require Class::DBI;
-    our @ISA = qw(Class::DBI);
-
-    $new_class->connection($arg->{dsn});
-    $new_class->table($arg->{table});
-
-    $new_class->columns(All => map { @$_ } values %note_columns);
+    no strict 'refs';
+    @{$new_class . '::ISA'} = qw(Class::DBI);
   };
+
+  $new_class->connection($arg->{dsn});
+  $new_class->table($arg->{table});
+
+  $new_class->columns(All => map { @$_ } values %note_columns);
 
   return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
 }
