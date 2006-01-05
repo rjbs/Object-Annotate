@@ -71,6 +71,12 @@ sub import {
     into => $caller,
     as   => 'annotate'
   });
+
+  Sub::Install::install_sub({
+    code => sub { $class },
+    into => $caller,
+    as   => 'annotation_class'
+  });
 }
 
 =head1 METHODS
@@ -92,8 +98,8 @@ Valid arguments are:
 sub class_for {
   my ($self, $arg) = @_;
 
-  my $dsn   = $arg->{dsn}   || 'dbi:Pg:dbname=icg;hostname=licorice.pobox.com';
-  my $table = $arg->{table} || 'table';
+  my $dsn   = $arg->{dsn}   || 'dbi:Pg:dbname=icg;host=licorice.pobox.com;sslmode=prefer';
+  my $table = $arg->{table} || 'annotations';
 
   # Try to find an already-constructed class.
   my $class = exists $class_for->{ $dsn }
@@ -132,7 +138,7 @@ sub construct_class {
     @{$new_class . '::ISA'} = qw(Class::DBI);
   };
 
-  $new_class->connection($arg->{dsn});
+  $new_class->connection($arg->{dsn}, 'icg', 'cjokerz');
   $new_class->table($arg->{table});
 
   my @columns = map { @$_ } values %note_columns;
@@ -184,6 +190,8 @@ sub build_annotator {
       next unless exists $arg->{$_};
       $attr{$_} = $arg->{$_};
     }
+
+    use Data::Dump::Streamer; Dump(\%attr);
 
     $class->create({
       class     => $obj_class,
