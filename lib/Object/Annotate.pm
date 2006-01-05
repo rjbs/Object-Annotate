@@ -98,6 +98,8 @@ Valid arguments are:
 sub class_for {
   my ($self, $arg) = @_;
 
+  # XXX: These defaults should be taken from the environment. -- rjbs,
+  # 2006-01-05
   my $dsn   = $arg->{dsn}   || 'dbi:Pg:dbname=icg;host=licorice.pobox.com;sslmode=prefer';
   my $table = $arg->{table} || 'annotations';
 
@@ -138,11 +140,16 @@ sub construct_class {
     @{$new_class . '::ISA'} = qw(Class::DBI);
   };
 
+  # XXX: Obviously, auth should be passed in.
   $new_class->connection($arg->{dsn}, 'icg', 'cjokerz');
   $new_class->table($arg->{table});
 
   my @columns = map { @$_ } values %note_columns;
   $new_class->columns(All => ('id', @columns));
+
+  # XXX: This is a hack, and would be fixed in Class::DBD 3.0.3, I believe.
+  # -- rjbs, 2006-01-05
+  $new_class->sequence("$arg->{table}_id_seq");
 
   return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
 }
@@ -173,7 +180,7 @@ sub build_annotator {
   my $annotator = sub {
     # This $arg purposefully shadows the previous; I don't want to enclose
     # those args. -- rjbs, 2006-01-05
-    my ($self, $arg) = shift;
+    my ($self, $arg) = @_;
 
     my $id;
     if (ref $id_attr) {
