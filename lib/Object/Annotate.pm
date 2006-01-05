@@ -50,7 +50,7 @@ my $class_for = {};
 my $current_suffix = 0;
 
 my %note_columns = (
-  auto   => [ qw(note_id class object_id note_time) ],
+  auto   => [ qw(class object_id note_time) ],
   manual => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
@@ -135,7 +135,8 @@ sub construct_class {
   $new_class->connection($arg->{dsn});
   $new_class->table($arg->{table});
 
-  $new_class->columns(All => map { @$_ } values %note_columns);
+  my @columns = map { @$_ } values %note_columns;
+  $new_class->columns(All => ('id', @columns));
 
   return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
 }
