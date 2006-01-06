@@ -75,6 +75,7 @@ sub import {
     class     => $class,
     obj_class => $arg->{obj_class} || $caller->moniker,
     id_attr   => $arg->{id_attr} || 'id',
+    set_time  => (scalar $arg->{dsn} =~ /SQLite/),
   });
 
   Sub::Install::install_sub({
@@ -193,6 +194,7 @@ sub build_annotator {
   my $class     = $arg->{class};
   my $obj_class = $arg->{obj_class};
   my $id_attr   = $arg->{id_attr};
+  my $set_time  = $arg->{set_time};
 
   my $annotator = sub {
     # This $arg purposefully shadows the previous; I don't want to enclose
@@ -214,6 +216,8 @@ sub build_annotator {
       next unless exists $arg->{$_};
       $attr{$_} = $arg->{$_};
     }
+
+    $attr{note_time} = time if $set_time;
 
     $class->create({
       class     => $obj_class,

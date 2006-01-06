@@ -3,17 +3,19 @@
 use strict;
 use warnings;
 
+use lib 't';
+use OAUtil;
+
 use Test::More 'no_plan';
+
+BEGIN { OAUtil->build_empty_db; }
 
 {
   package Some::Object;
   use Object::Annotate {
     obj_class => 'thinger',
-    dsn       => 'dbi:Pg:dbname=icg;host=licorice.pobox.com;sslmode=prefer',
+    dsn       => 'dbi:SQLite:dbname=t/notes.db',
     table     => 'annotations',
-    db_user   => 'icg',
-    db_pass   => 'cjokerz',
-    sequence  => 'annotations_id_seq',
   };
 
   sub id { return $_[0] + 0 };
