@@ -7,7 +7,14 @@ use Test::More 'no_plan';
 
 {
   package Some::Object;
-  use Object::Annotate { obj_class => 'thinger' };
+  use Object::Annotate {
+    obj_class => 'thinger',
+    dsn       => 'dbi:Pg:dbname=icg;host=licorice.pobox.com;sslmode=prefer',
+    table     => 'annotations',
+    db_user   => 'icg',
+    db_pass   => 'cjokerz',
+    sequence  => 'annotations_id_seq',
+  };
 
   sub id { return $_[0] + 0 };
 }

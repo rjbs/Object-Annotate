@@ -33,7 +33,18 @@ use UNIVERSAL::moniker;
 
 =head1 DESCRIPTION
 
+
+
+=head1 USAGE
+
 Valid arguments to pass to Object::Annotate's import routine are:
+
+  dsn       - the DSN to pass to Class::DBI to create a connection
+  table     - the table in which annotations are stored
+  db_user   - the username to use in connecting to the database
+  db_pass   - the password to use in connecting to the database
+  sequence  - if given, the Class::DBI table's primary key values comes from
+              this sequence; see L<Class::DBI> for more information
 
   obj_class - the class name to use for annotations for this class
               (defaults to Class->moniker, see UNIVERSAL::moniker)
@@ -79,7 +90,7 @@ sub import {
   });
 }
 
-=head1 METHODS
+=head1 INTERNALS
 
 =head2 C< class_for >
 
@@ -88,20 +99,21 @@ sub import {
 This method returns the class to use for the described database and table,
 constructing it (see C<L</construct_class>>) if needed.
 
-Valid arguments are:
+Valid arguments are: dsn, table, db_user, db_pass
 
-  dsn   - the dsn for the database in which to store
-  table - the table in which to store annotations
+See the L</USAGE> section, above, for information on these arguments, which
+typically are passed along by the import routine.
 
 =cut
 
 sub class_for {
   my ($self, $arg) = @_;
 
-  # XXX: These defaults should be taken from the environment. -- rjbs,
-  # 2006-01-05
-  my $dsn   = $arg->{dsn}   || 'dbi:Pg:dbname=icg;host=licorice.pobox.com;sslmode=prefer';
-  my $table = $arg->{table} || 'annotations';
+  my $dsn   = $arg->{dsn}   || $ENV{OBJ_ANNOTATE_DSN};
+  my $table = $arg->{table} || $ENV{OBJ_ANNOTATE_TABLE};
+
+  my $user  = $arg->{db_user};
+  my $pass  = $arg->{db_pass};
 
   # Try to find an already-constructed class.
   my $class = exists $class_for->{ $dsn }
@@ -109,7 +121,13 @@ sub class_for {
            && $class_for->{ $dsn }->{ $table };
 
   # If we have no class built for this combination, build it.
-  $class ||= $self->construct_class({ dsn => $dsn, table => $table });
+  $class ||= $self->construct_class({
+    dsn      => $dsn,
+    table    => $table,
+    db_user  => $user,
+    db_pass  => $pass,
+    sequence => $arg->{sequence},
+  });
 
   return $class;
 }
@@ -140,16 +158,13 @@ sub construct_class {
     @{$new_class . '::ISA'} = qw(Class::DBI);
   };
 
-  # XXX: Obviously, auth should be passed in.
-  $new_class->connection($arg->{dsn}, 'icg', 'cjokerz');
+  $new_class->connection($arg->{dsn}, $arg->{db_user}, $arg->{db_pass});
   $new_class->table($arg->{table});
 
   my @columns = map { @$_ } values %note_columns;
   $new_class->columns(All => ('id', @columns));
 
-  # XXX: This is a hack, and would be fixed in Class::DBD 3.0.3, I believe.
-  # -- rjbs, 2006-01-05
-  $new_class->sequence("$arg->{table}_id_seq");
+  $new_class->sequence($arg->{sequence}) if $arg->{sequence};
 
   $new_class->db_Main->{ AutoCommit } = 1;
 
