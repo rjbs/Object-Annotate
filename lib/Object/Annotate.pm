@@ -151,7 +151,7 @@ sub construct_class {
   my ($class, $arg) = @_;
 
   my $new_class
-    = sprintf 'Object::Annotate::Construct_%04x', ++$current_suffix;
+    = sprintf '%s::Construct_%04x', __PACKAGE__, ++$current_suffix;
 
   require Class::DBI;
   do {
