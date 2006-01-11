@@ -69,12 +69,22 @@ sub import {
   my ($self, $arg) = @_;
   my $caller = caller(0);
 
-  my $class = $self->class_for($arg);
+  my $class     = $self->class_for($arg);
+  my $obj_class = $arg->{obj_class} || $caller->moniker;
+  my %build_option = (
+    class     => $class,
+    obj_class => $obj_class,
+    id_attr   => $arg->{id_attr} || 'id',
+  );
+
+  Sub::Install::install_sub({
+    code => sub { $class },
+    into => $caller,
+    as   => 'annotation_class'
+  });
 
   my $annotator = $self->build_annotator({
-    class     => $class,
-    obj_class => $arg->{obj_class} || $caller->moniker,
-    id_attr   => $arg->{id_attr} || 'id',
+    %build_option,
     set_time  => (scalar $arg->{dsn} =~ /SQLite/),
   });
 
@@ -85,10 +95,26 @@ sub import {
   });
 
   Sub::Install::install_sub({
-    code => sub { $class },
+    code => $self->build_searcher(\%build_option),
     into => $caller,
-    as   => 'annotation_class'
+    as   => 'search_annotations'
   });
+}
+
+=head2 C< search_annotations >
+
+  # search all annotations for this class
+  my @notes = Class->search_annotations({ event => 'explosion' });
+
+  # searches only annotations for this object
+  my @notes = $object->search_annotations({ event => 'explosion' });
+
+=cut
+
+sub searcher {
+  my ($self, $arg) = @_;
+
+
 }
 
 =head1 INTERNALS
@@ -100,7 +126,8 @@ sub import {
 This method returns the class to use for the described database and table,
 constructing it (see C<L</construct_class>>) if needed.
 
-Valid arguments are: dsn, table, db_user, db_pass
+Valid arguments are (for all, see the L</USAGE> section): dsn, table, db_user,
+db_pass, sequence
 
 See the L</USAGE> section, above, for information on these arguments, which
 typically are passed along by the import routine.
@@ -185,6 +212,7 @@ It takes the following arguments:
   obj_class - the class name to use for this class's log entries
   id_attr   - the method to use to get object ids; if a scalar ref, 
               the dereferenced string is used as a constant
+  set_time  - if true, the note_time value will be created as the current time
 
 =cut
 
@@ -231,5 +259,8 @@ sub build_annotator {
 
   return $annotator;
 }
+
+sub build_searcher {
+  my ($self, $arg) = @_;
 
 '2. see footnote #1';
