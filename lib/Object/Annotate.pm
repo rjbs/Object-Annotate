@@ -72,7 +72,6 @@ sub import {
   my $class     = $self->class_for($arg);
   my $obj_class = $arg->{obj_class} || $caller->moniker;
   my %build_option = (
-    class     => $class,
     obj_class => $obj_class,
     id_attr   => $arg->{id_attr} || 'id',
   );
@@ -110,12 +109,6 @@ sub import {
   my @notes = $object->search_annotations({ event => 'explosion' });
 
 =cut
-
-sub searcher {
-  my ($self, $arg) = @_;
-
-
-}
 
 =head1 INTERNALS
 
@@ -208,7 +201,6 @@ class.  It returns a coderef.
 
 It takes the following arguments:
 
-  class     - the constructed Class::DBI class to use for annotations
   obj_class - the class name to use for this class's log entries
   id_attr   - the method to use to get object ids; if a scalar ref, 
               the dereferenced string is used as a constant
@@ -219,7 +211,6 @@ It takes the following arguments:
 sub build_annotator {
   my ($self, $arg) = @_;
 
-  my $class     = $arg->{class};
   my $obj_class = $arg->{obj_class};
   my $id_attr   = $arg->{id_attr};
   my $set_time  = $arg->{set_time};
@@ -247,7 +238,7 @@ sub build_annotator {
 
     $attr{note_time} = time if $set_time;
 
-    $class->create({
+    $self->annotation_class->create({
       class     => $obj_class,
       object_id => $id,
       %attr,
@@ -260,7 +251,44 @@ sub build_annotator {
   return $annotator;
 }
 
+=head2 C< build_searcher >
+
+  my $code = Object::Annotate->build_searcher(\%arg);
+
+This builds the routine that will be installed as "search_annotations" in the
+importing class.  It returns a coderef.
+
+It takes the following arguments:
+
+  obj_class - the class name to use for this class's log entries
+  id_attr   - the method to use to get object ids; if a scalar ref, 
+              the dereferenced string is used as a constant
+
+=cut
+
 sub build_searcher {
   my ($self, $arg) = @_;
+
+  my $obj_class = $arg->{obj_class};
+  my $id_attr   = $arg->{id_attr};
+  
+  my $searcher = sub {
+    my ($self, $arg) = @_;
+    $arg ||= {};
+
+    my $id;
+    if (ref $id_attr) {
+      $id = $$id_attr;
+    } elsif (ref $self) {
+      $id = $self->$id_attr;
+      Carp::croak "couldn't get id for $self via $id_attr" unless $id;
+    }
+
+    $arg->{class}     = $obj_class;
+    $arg->{object_id} = $id if defined $id and not exists $arg->{object_id};
+
+    $self->annotation_class->search(%$arg);
+  }
+}
 
 '2. see footnote #1';
