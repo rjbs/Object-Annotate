@@ -17,7 +17,7 @@ version 0.01
 
 our $VERSION = '0.01';
 
-use Carp;
+use Carp ();
 use Sub::Install;
 use UNIVERSAL::moniker;
 
@@ -69,8 +69,29 @@ sub import {
   my ($self, $arg) = @_;
   my $caller = caller(0);
 
+  $self->setup_class($caller, $arg);
+}
+
+sub new {
+  my ($self, $arg) = @_;
+
+  my $target
+    = sprintf '%s::Singularity::0x%08x', __PACKAGE__, ++$current_suffix;
+
+  $self->setup_class($target, $arg);
+
+  my $singularity = \do { undef };
+  bless $singularity => $target;
+}
+
+sub setup_class {
+  my ($self, $target, $arg) = @_;
+
   my $class     = $self->class_for($arg);
-  my $obj_class = $arg->{obj_class} || $caller->moniker;
+  my $obj_class = $arg->{obj_class} || $target->moniker;
+
+  Carp::croak "couldn't determine obj_class for $target" unless $obj_class;
+  
   my %build_option = (
     obj_class => $obj_class,
     id_attr   => $arg->{id_attr} || 'id',
@@ -78,7 +99,7 @@ sub import {
 
   Sub::Install::install_sub({
     code => sub { $class },
-    into => $caller,
+    into => $target,
     as   => 'annotation_class'
   });
 
@@ -89,16 +110,36 @@ sub import {
 
   Sub::Install::install_sub({
     code => $annotator,
-    into => $caller,
+    into => $target,
     as   => 'annotate'
   });
 
   Sub::Install::install_sub({
     code => $self->build_searcher(\%build_option),
-    into => $caller,
+    into => $target,
     as   => 'search_annotations'
   });
 }
+
+=head1 METHODS
+
+=head2 C< annotation_class >
+
+  my $annotation_class = Your::Class->annotation_class;
+
+This method returns the name of the automatically constructed class that
+handles annotations for the class or object on which it is installed.
+
+=head2 C< annotate >
+
+  $object->annotate({
+    event => 'update',
+    attr  => 'priority',
+    old_val => 1,
+    new_val => 3,
+  });
+
+This method creates an annotation for the object on which it is called.
 
 =head2 C< search_annotations >
 
@@ -107,6 +148,9 @@ sub import {
 
   # searches only annotations for this object
   my @notes = $object->search_annotations({ event => 'explosion' });
+
+This method searches through the annotations for a class or an object, using
+the Class::DBI C<search> method.
 
 =cut
 
