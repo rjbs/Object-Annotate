@@ -60,9 +60,10 @@ my $class_for = {};
 # We'll keep a counter, here, to use to form unique class names.
 my $current_suffix = 0;
 
+# The "id" column isn't here because we want it first, always.
 my %note_columns = (
-  auto   => [ qw(class object_id note_time) ],
-  manual => [ qw(event attr old_val new_val via comment expire_time) ],
+  mandatory => [ qw(class object_id note_time) ],
+  default   => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
 sub import {
@@ -191,6 +192,7 @@ sub class_for {
     table    => $table,
     db_user  => $user,
     db_pass  => $pass,
+    columns  => $arg->{columns},
     sequence => $arg->{sequence},
   });
 
@@ -206,8 +208,9 @@ described by the arguments.
 
 Valid arguments are:
 
-  dsn   - the dsn for the database in which to store
-  table - the table in which to store annotations
+  dsn     - the dsn for the database in which to store
+  table   - the table in which to store annotations
+  columns - the extra columns for the table
 
 =cut
 
@@ -226,7 +229,10 @@ sub construct_class {
   $new_class->connection($arg->{dsn}, $arg->{db_user}, $arg->{db_pass});
   $new_class->table($arg->{table});
 
-  my @columns = map { @$_ } values %note_columns;
+  my @columns = @{ $note_columns{mandatory} };
+  my @extra_columns = @{ $arg->{columns} || $note_columns{default} };
+  push @columns, @extra_columns;
+
   $new_class->columns(All => ('id', @columns));
 
   $new_class->sequence($arg->{sequence}) if $arg->{sequence};
@@ -275,7 +281,7 @@ sub build_annotator {
     # build up only those attributes we said, in %note_columns, we'd allow to
     # be passed in manually
     my %attr;
-    for (@{ $note_columns{manual} }) {
+    for (@{ $note_columns{default} }) {
       next unless exists $arg->{$_};
       $attr{$_} = $arg->{$_};
     }
