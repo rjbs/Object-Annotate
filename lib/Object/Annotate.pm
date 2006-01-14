@@ -33,18 +33,26 @@ use UNIVERSAL::moniker;
 
 =head1 DESCRIPTION
 
-
+Object::Annotate is a mixin that provides any class with method for storing
+and retrieving notes about its objects.  It can also produce objects which
+exist only to store annotations about abstract (uninstantiated) objects,
+procedures, or concepts.
 
 =head1 USAGE
 
-Valid arguments to pass to Object::Annotate's import routine are:
+To mix Object::Annotate into a class, just C<use> it.  To create a classless
+annotator object, use Object::Annotate's C<new> method.  Both of these usages
+accept the same arguments:
 
-  dsn       - the DSN to pass to Class::DBI to create a connection
-  table     - the table in which annotations are stored
-  db_user   - the username to use in connecting to the database
-  db_pass   - the password to use in connecting to the database
-  sequence  - if given, the Class::DBI table's primary key values comes from
-              this sequence; see L<Class::DBI> for more information
+  db        - options for the database in which notes are stored; a hashref:
+
+    dsn       - the DSN to pass to Class::DBI to create a connection
+    user      - the username to use in connecting to the database
+    pass      - the password to use in connecting to the database
+    table     - the table in which annotations are stored
+    sequence  - if given, the Class::DBI table's primary key values comes from
+                this sequence; see L<Class::DBI> for more information
+    columns   - columns for the annotation table
 
   obj_class - the class name to use for annotations for this class
               (defaults to Class->moniker, see UNIVERSAL::moniker)
@@ -67,10 +75,10 @@ my %note_columns = (
 );
 
 sub import {
-  my ($self, $arg) = @_;
+  my ($self, %arg) = @_;
   my $caller = caller(0);
 
-  $self->setup_class($caller, $arg);
+  $self->setup_class($caller, \%arg);
 }
 
 sub new {
@@ -85,44 +93,10 @@ sub new {
   bless $singularity => $target;
 }
 
-sub setup_class {
-  my ($self, $target, $arg) = @_;
-
-  my $class     = $self->class_for($arg);
-  my $obj_class = $arg->{obj_class} || $target->moniker;
-
-  Carp::croak "couldn't determine obj_class for $target" unless $obj_class;
-  
-  my %build_option = (
-    obj_class => $obj_class,
-    id_attr   => $arg->{id_attr} || 'id',
-  );
-
-  Sub::Install::install_sub({
-    code => sub { $class },
-    into => $target,
-    as   => 'annotation_class'
-  });
-
-  my $annotator = $self->build_annotator({
-    %build_option,
-    set_time  => (scalar $arg->{dsn} =~ /SQLite/),
-  });
-
-  Sub::Install::install_sub({
-    code => $annotator,
-    into => $target,
-    as   => 'annotate'
-  });
-
-  Sub::Install::install_sub({
-    code => $self->build_searcher(\%build_option),
-    into => $target,
-    as   => 'search_annotations'
-  });
-}
-
 =head1 METHODS
+
+These methods are not provided by Object::Annotate, but are installed into
+classes that use Object::Annotate.
 
 =head2 C< annotation_class >
 
@@ -157,6 +131,53 @@ the Class::DBI C<search> method.
 
 =head1 INTERNALS
 
+=head2 C< setup_class >
+
+  Object::Annotate->setup_class($target, \%arg);
+
+This method does the heavy lifting needed to turn the class named by C<$target>
+into one that does annotation.
+
+=cut
+
+sub setup_class {
+  my ($self, $target, $arg) = @_;
+
+  my $class     = $self->class_for($arg);
+  my $obj_class = $arg->{obj_class} || $target->moniker;
+
+  Carp::croak "couldn't determine obj_class for $target" unless $obj_class;
+  
+  my %build_option = (
+    obj_class => $obj_class,
+    id_attr   => $arg->{id_attr} || 'id',
+  );
+
+  Sub::Install::install_sub({
+    code => sub { $class },
+    into => $target,
+    as   => 'annotation_class'
+  });
+
+  my $annotator = $self->build_annotator({
+    %build_option,
+    set_time  => (scalar $arg->{db}{dsn} =~ /SQLite/),
+  });
+
+  Sub::Install::install_sub({
+    code => $annotator,
+    into => $target,
+    as   => 'annotate'
+  });
+
+  Sub::Install::install_sub({
+    code => $self->build_searcher(\%build_option),
+    into => $target,
+    as   => 'search_annotations'
+  });
+}
+
+
 =head2 C< class_for >
 
   my $class = Object::Annotate->class_for(\%arg);
@@ -175,11 +196,11 @@ typically are passed along by the import routine.
 sub class_for {
   my ($self, $arg) = @_;
 
-  my $dsn   = $arg->{dsn}   || $ENV{OBJ_ANNOTATE_DSN};
-  my $table = $arg->{table} || $ENV{OBJ_ANNOTATE_TABLE};
+  my $dsn   = $arg->{db}{dsn}   || $ENV{OBJ_ANNOTATE_DSN};
+  my $table = $arg->{db}{table} || $ENV{OBJ_ANNOTATE_TABLE};
 
-  my $user  = $arg->{db_user};
-  my $pass  = $arg->{db_pass};
+  my $user  = $arg->{db}{user};
+  my $pass  = $arg->{db}{pass};
 
   # Try to find an already-constructed class.
   my $class = exists $class_for->{ $dsn }
@@ -187,11 +208,11 @@ sub class_for {
            && $class_for->{ $dsn }->{ $table };
 
   # If we have no class built for this combination, build it.
-  $class ||= $self->construct_class({
+  $class ||= $self->construct_cdbi_class({
     dsn      => $dsn,
+    user     => $user,
+    pass     => $pass,
     table    => $table,
-    db_user  => $user,
-    db_pass  => $pass,
     columns  => $arg->{columns},
     sequence => $arg->{sequence},
   });
@@ -199,9 +220,9 @@ sub class_for {
   return $class;
 }
 
-=head2 C< construct_class >
+=head2 C< construct_cdbi_class >
 
-  my $new_class = Object::Annotate->construct_class(\%arg);
+  my $new_class = Object::Annotate->construct_cdbi_class(\%arg);
 
 This method sets up a new Class::DBI subclass that will store in the database
 described by the arguments.
@@ -209,12 +230,14 @@ described by the arguments.
 Valid arguments are:
 
   dsn     - the dsn for the database in which to store
+  user    - the database user as whom to connect
+  pass    - the database password
   table   - the table in which to store annotations
   columns - the extra columns for the table
 
 =cut
 
-sub construct_class {
+sub construct_cdbi_class {
   my ($class, $arg) = @_;
 
   my $new_class
@@ -226,7 +249,7 @@ sub construct_class {
     @{$new_class . '::ISA'} = qw(Class::DBI);
   };
 
-  $new_class->connection($arg->{dsn}, $arg->{db_user}, $arg->{db_pass});
+  $new_class->connection($arg->{dsn}, $arg->{user}, $arg->{pass});
   $new_class->table($arg->{table});
 
   my @columns = @{ $note_columns{mandatory} };

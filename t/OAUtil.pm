@@ -7,10 +7,21 @@ use DBI;
 use Fatal;
 use File::Slurp;
 
-my $schema = read_file("sql/sqlite.sql");
+my ($schema, $db, $dsn, @db_pair);
 
-my $db  = "t/notes.db";
-my $dsn = "dbi:SQLite:dbname=$db";
+BEGIN { 
+  $schema = read_file("sql/sqlite.sql");
+
+  $db  = "t/notes.db";
+  $dsn = "dbi:SQLite:dbname=$db";
+
+  @db_pair = (
+    db => { 
+      dsn   => $dsn,
+      table => 'annotations',
+    }
+  );
+}
 
 sub build_empty_db {
   unlink $db if -e $db;
@@ -20,11 +31,10 @@ sub build_empty_db {
 
 {
   package Some::Object;
-  use Object::Annotate {
+  use Object::Annotate (
+    @db_pair,
     obj_class => 'thinger',
-    dsn       => 'dbi:SQLite:dbname=t/notes.db',
-    table     => 'annotations',
-  };
+  );
 
   sub new { return bless {} }
   sub id { return $_[0] + 0 };
@@ -32,10 +42,7 @@ sub build_empty_db {
 
 {
   package Some::Widget;
-  use Object::Annotate {
-    dsn       => 'dbi:SQLite:dbname=t/notes.db',
-    table     => 'annotations',
-  };
+  use Object::Annotate @db_pair;
 
   sub new { return bless {} => shift }
   sub id { return $_[0] + 0 };
@@ -44,12 +51,11 @@ sub build_empty_db {
 {
   package Some::Widget::Generic;
   our @ISA = qw(Some::Widget);
-  use Object::Annotate {
-    dsn       => 'dbi:SQLite:dbname=t/notes.db',
-    table     => 'annotations',
+  use Object::Annotate (
+    @db_pair,
     obj_class => 'widgeneric',
     id_attr   => \'generic',
-  };
+  );
 }
 
 "true value";
