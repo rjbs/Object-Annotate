@@ -71,6 +71,8 @@ my $current_suffix = 0;
 # The "id" column isn't here because we want it first, always.
 my %note_columns = (
   mandatory => [ qw(class object_id note_time) ],
+  # I plan to use these values in the future. -- rjbs, 2006-01-13
+  # default   => [ qw(event attr old_val new_val via comment expire_time) ],
   default   => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
