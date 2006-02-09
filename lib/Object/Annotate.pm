@@ -198,8 +198,8 @@ typically are passed along by the import routine.
 sub class_for {
   my ($self, $arg) = @_;
 
-  my $dsn   = $arg->{db}{dsn}   || $ENV{OBJ_ANNOTATE_DSN};
-  my $table = $arg->{db}{table} || $ENV{OBJ_ANNOTATE_TABLE};
+  my $dsn   = $arg->{db}{dsn}   || $class->default_dsn;
+  my $table = $arg->{db}{table} || $class->default_dsn;
 
   my $user  = $arg->{db}{user};
   my $pass  = $arg->{db}{pass};
@@ -221,6 +221,19 @@ sub class_for {
 
   return $class;
 }
+
+=head2 C< default_dsn >
+
+=head2 C< default_table >
+
+These methods return the default DSN and table name to use if none is specified
+when importing Object::Annotate.  The built-in behavior is to return the
+OBJ_ANNOTATE_DSN and OBJ_ANNOTATE_TABLE environment variables.
+
+=cut
+
+sub default_dsn   { $ENV{OBJ_ANNOTATE_DSN};   }
+sub default_table { $ENV{OBJ_ANNOTATE_TABLE}; }
 
 =head2 C< construct_cdbi_class >
 
