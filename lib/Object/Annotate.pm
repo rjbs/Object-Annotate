@@ -83,11 +83,22 @@ sub import {
   $self->setup_class($caller, \%arg);
 }
 
+=head2 C< new >
+
+You can use the C<new> method to create a singularity -- an object that can
+annotate as if it was of a class that used Object::Annotate, but is of its own
+unique class.
+
+  my $notepad = Object::Annotate->new({ db => { ... } });
+
+=cut
+
 sub new {
   my ($self, $arg) = @_;
+  my $class = (ref $self) ? ref $self : $self;
 
   my $target
-    = sprintf '%s::Singularity::0x%08x', __PACKAGE__, ++$current_suffix;
+    = sprintf '%s::Singularity::0x%08x', $class, ++$current_suffix;
 
   $self->setup_class($target, $arg);
 

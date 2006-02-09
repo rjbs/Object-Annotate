@@ -5,12 +5,15 @@ use warnings;
 
 use DBI;
 use Fatal;
-use File::Slurp;
 
 my ($schema, $db, $dsn, @db_pair);
 
 BEGIN { 
-  $schema = read_file("sql/sqlite.sql");
+  $schema = do {
+    open my $schema_file, "<", "sql/sqlite.sql";
+    local $/;
+    <$schema_file>;
+  };
 
   $db  = "t/notes.db";
   $dsn = "dbi:SQLite:dbname=$db";
