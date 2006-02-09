@@ -209,8 +209,8 @@ typically are passed along by the import routine.
 sub class_for {
   my ($self, $arg) = @_;
 
-  my $dsn   = $arg->{db}{dsn}   || $class->default_dsn;
-  my $table = $arg->{db}{table} || $class->default_dsn;
+  my $dsn   = $arg->{db}{dsn}   || $self->default_dsn;
+  my $table = $arg->{db}{table} || $self->default_dsn;
 
   my $user  = $arg->{db}{user}  || $self->default_user;
   my $pass  = $arg->{db}{pass}  || $self->default_pass;
