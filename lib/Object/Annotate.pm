@@ -227,7 +227,7 @@ sub class_for {
     pass     => $pass,
     table    => $table,
     columns  => $arg->{columns},
-    sequence => $arg->{sequence},
+    sequence => $arg->{sequence} || $self->_default_sequence,
   });
 
   return $class;
@@ -251,6 +251,8 @@ sub default_dsn   { $ENV{OBJ_ANNOTATE_DSN};   }
 sub default_table { $ENV{OBJ_ANNOTATE_TABLE}; }
 sub default_user  { $ENV{OBJ_ANNOTATE_USER}; }
 sub default_pass  { $ENV{OBJ_ANNOTATE_PASS}; }
+
+sub _default_sequence {  }
 
 =head2 C< construct_cdbi_class >
 
