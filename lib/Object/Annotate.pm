@@ -357,13 +357,6 @@ sub build_annotator {
 
     $attr{note_time} = time if $set_time;
 
-    use Data::Dump::Streamer;
-    Dump({
-      class     => $obj_class,
-      object_id => $id,
-      %attr,
-    });
-
     $self->annotation_class->create({
       class     => $obj_class,
       object_id => $id,
