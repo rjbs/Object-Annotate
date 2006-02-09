@@ -156,6 +156,14 @@ into one that does annotation.
 sub setup_class {
   my ($self, $target, $arg) = @_;
 
+  $arg->{db}{dsn}   ||= $self->default_dsn;
+  $arg->{db}{table} ||= $self->default_dsn;
+
+  $arg->{db}{user}  ||= $self->default_user;
+  $arg->{db}{pass}  ||= $self->default_pass;
+
+  $arg->{sequence}  ||= $self->_default_sequence;
+
   my $class     = $self->class_for($arg);
   my $obj_class = $arg->{obj_class} || $target->moniker;
 
@@ -209,11 +217,11 @@ typically are passed along by the import routine.
 sub class_for {
   my ($self, $arg) = @_;
 
-  my $dsn   = $arg->{db}{dsn}   || $self->default_dsn;
-  my $table = $arg->{db}{table} || $self->default_dsn;
+  my $dsn   = $arg->{db}{dsn};
+  my $table = $arg->{db}{table};
 
-  my $user  = $arg->{db}{user}  || $self->default_user;
-  my $pass  = $arg->{db}{pass}  || $self->default_pass;
+  my $user  = $arg->{db}{user};
+  my $pass  = $arg->{db}{pass};
 
   # Try to find an already-constructed class.
   my $class = exists $class_for->{ $dsn }
@@ -227,7 +235,7 @@ sub class_for {
     pass     => $pass,
     table    => $table,
     columns  => $arg->{columns},
-    sequence => $arg->{sequence} || $self->_default_sequence,
+    sequence => $arg->{sequence},
   });
 
   return $class;
