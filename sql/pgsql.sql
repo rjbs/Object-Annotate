@@ -10,10 +10,11 @@ CREATE TABLE annotations (
   via       varchar(80),          -- what caused the change?
   comment   varchar(255),         -- the annotation, if any
   note_time timestamp             -- when the annotation was made
-            without time zone
+            with time zone
             NOT NULL
             DEFAULT current_timestamp,
   expire_time timestamp           -- when the annotation was made
-            without time zone     -- this may be null, for "never expire"
-            DEFAULT NULL
+            with time zone        -- this may be null, for "never expire"
+            NOT NULL
+            DEFAULT 'infinity'
 );
