@@ -157,7 +157,7 @@ sub setup_class {
   my ($self, $target, $arg) = @_;
 
   $arg->{db}{dsn}   ||= $self->default_dsn;
-  $arg->{db}{table} ||= $self->default_dsn;
+  $arg->{db}{table} ||= $self->default_table;
 
   $arg->{db}{user}  ||= $self->default_user;
   $arg->{db}{pass}  ||= $self->default_pass;
@@ -418,4 +418,5 @@ sub build_searcher {
 }
 
 '2. see footnote #1';
+
 
