@@ -212,8 +212,8 @@ sub class_for {
   my $dsn   = $arg->{db}{dsn}   || $class->default_dsn;
   my $table = $arg->{db}{table} || $class->default_dsn;
 
-  my $user  = $arg->{db}{user};
-  my $pass  = $arg->{db}{pass};
+  my $user  = $arg->{db}{user}  || $self->default_user;
+  my $pass  = $arg->{db}{pass}  || $self->default_pass;
 
   # Try to find an already-constructed class.
   my $class = exists $class_for->{ $dsn }
@@ -237,14 +237,20 @@ sub class_for {
 
 =head2 C< default_table >
 
-These methods return the default DSN and table name to use if none is specified
+=head2 C< default_user >
+
+=head2 C< default_pass >
+
+These methods return the default database settings to use if none is specified
 when importing Object::Annotate.  The built-in behavior is to return the
-OBJ_ANNOTATE_DSN and OBJ_ANNOTATE_TABLE environment variables.
+OBJ_ANNOTATE_DSN, OBJ_ANNOTATE_TABLE, etc. environment variables.
 
 =cut
 
 sub default_dsn   { $ENV{OBJ_ANNOTATE_DSN};   }
 sub default_table { $ENV{OBJ_ANNOTATE_TABLE}; }
+sub default_user  { $ENV{OBJ_ANNOTATE_USER}; }
+sub default_pass  { $ENV{OBJ_ANNOTATE_PASS}; }
 
 =head2 C< construct_cdbi_class >
 
