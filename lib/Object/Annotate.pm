@@ -236,6 +236,7 @@ sub class_for {
     table    => $table,
     columns  => $arg->{columns},
     sequence => $arg->{sequence},
+    base_class => $arg->{base_class},
   });
 
   return $class;
@@ -276,6 +277,7 @@ Valid arguments are:
   pass    - the database password
   table   - the table in which to store annotations
   columns - the extra columns for the table
+  base_class - class from which the new class inherits (default: Class::DBI)
 
 =cut
 
@@ -285,10 +287,12 @@ sub construct_cdbi_class {
   my $new_class
     = sprintf '%s::Construct::0x%08x', __PACKAGE__, ++$current_suffix;
 
-  require Class::DBI;
+  $arg->{base_class} ||= 'Class::DBI';
+
+  eval "require $arg->{base_class};" or die $@;
   do {
     no strict 'refs';
-    @{$new_class . '::ISA'} = qw(Class::DBI);
+    @{$new_class . '::ISA'} = $arg->{base_class};
   };
 
   $new_class->connection($arg->{dsn}, $arg->{user}, $arg->{pass});
@@ -353,6 +357,13 @@ sub build_annotator {
 
     $attr{note_time} = time if $set_time;
 
+    use Data::Dump::Streamer;
+    Dump({
+      class     => $obj_class,
+      object_id => $id,
+      %attr,
+    });
+
     $self->annotation_class->create({
       class     => $obj_class,
       object_id => $id,
@@ -407,3 +418,4 @@ sub build_searcher {
 }
 
 '2. see footnote #1';
+
