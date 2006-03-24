@@ -260,6 +260,7 @@ sub default_dsn   { $ENV{OBJ_ANNOTATE_DSN};   }
 sub default_table { $ENV{OBJ_ANNOTATE_TABLE}; }
 sub default_user  { $ENV{OBJ_ANNOTATE_USER}; }
 sub default_pass  { $ENV{OBJ_ANNOTATE_PASS}; }
+sub default_base_class  { 'Class::DBI' }
 
 sub _default_sequence {  }
 
@@ -287,7 +288,7 @@ sub construct_cdbi_class {
   my $new_class
     = sprintf '%s::Construct::0x%08x', __PACKAGE__, ++$current_suffix;
 
-  $arg->{base_class} ||= 'Class::DBI';
+  $arg->{base_class} ||= $class->default_base_class;
 
   eval "require $arg->{base_class};" or die $@;
   do {
