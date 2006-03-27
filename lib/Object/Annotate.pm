@@ -18,18 +18,25 @@ version 0.01
 our $VERSION = '0.01';
 
 use Carp ();
-use Sub::Install;
 use UNIVERSAL::moniker;
 
 =head1 SYNOPSIS
 
   package Your::Class;
-  use Object::Annotate { dsn => '...', table => 'notes' };
+  use Object::Annotate annotate => { dsn => '...', table => 'notes' };
 
   ...
 
   my $object = Your::Class->new( ... );
   $object->annotate({ event => "created", comment => "(as example)" });
+
+=head1 WARNING
+
+The interface described here is still in real flux.  Feedback is welcome!
+If, however, you rely on this interface for production code, and then upgrade
+this module blindly, you are likely to see things break.
+
+I will remove this warning when the interface is less likely to change.
 
 =head1 DESCRIPTION
 
@@ -77,17 +84,10 @@ my %note_columns = (
 );
 
 use Sub::Exporter -setup => {
-  collectors => { annotate => \&_setup_class },
+  groups => { annotator => \&setup_class },
 };
 
-sub _setup_class {
-  my ($arg, $name, $config, $import_args, $class, $into) = @_;
-
-  $class->setup_class($into, $arg);
-  return 1;
-}
-
-=head2 C< new >
+=head2 new
 
 You can use the C<new> method to create a singularity -- an object that can
 annotate as if it was of a class that used Object::Annotate, but is of its own
@@ -115,14 +115,14 @@ sub new {
 These methods are not provided by Object::Annotate, but are installed into
 classes that use Object::Annotate.
 
-=head2 C< annotation_class >
+=head2 annotation_class
 
   my $annotation_class = Your::Class->annotation_class;
 
 This method returns the name of the automatically constructed class that
 handles annotations for the class or object on which it is installed.
 
-=head2 C< annotate >
+=head2 annotate
 
   $object->annotate({
     event => 'update',
@@ -133,7 +133,7 @@ handles annotations for the class or object on which it is installed.
 
 This method creates an annotation for the object on which it is called.
 
-=head2 C< search_annotations >
+=head2 search_annotations
 
   # search all annotations for this class
   my @notes = Class->search_annotations({ event => 'explosion' });
@@ -148,7 +148,7 @@ the Class::DBI C<search> method.
 
 =head1 INTERNALS
 
-=head2 C< setup_class >
+=head2 setup_class
 
   Object::Annotate->setup_class($target, \%arg);
 
@@ -158,7 +158,7 @@ into one that does annotation.
 =cut
 
 sub setup_class {
-  my ($self, $target, $arg) = @_;
+  my ($self, $name, $arg, $col) = @_;
 
   $arg->{db}{dsn}   ||= $self->default_dsn;
   $arg->{db}{table} ||= $self->default_table;
@@ -169,41 +169,27 @@ sub setup_class {
   $arg->{sequence}  ||= $self->_default_sequence;
 
   my $class     = $self->class_for($arg);
-  my $obj_class = $arg->{obj_class} || $target->moniker;
 
-  Carp::croak "couldn't determine obj_class for $target" unless $obj_class;
+  my $obj_class = $arg->{obj_class};
   
   my %build_option = (
     obj_class => $obj_class,
     id_attr   => $arg->{id_attr} || 'id',
   );
 
-  Sub::Install::install_sub({
-    code => sub { $class },
-    into => $target,
-    as   => 'annotation_class'
-  });
-
   my $annotator = $self->build_annotator({
     %build_option,
     set_time  => (scalar $arg->{db}{dsn} =~ /SQLite/),
   });
 
-  Sub::Install::install_sub({
-    code => $annotator,
-    into => $target,
-    as   => 'annotate'
-  });
-
-  Sub::Install::install_sub({
-    code => $self->build_searcher(\%build_option),
-    into => $target,
-    as   => 'search_annotations'
-  });
+  my $return = {
+    annotation_class   => sub { $class },
+    annotate           => $annotator,
+    search_annotations => $self->build_searcher(\%build_option),
+  };
 }
 
-
-=head2 C< class_for >
+=head2 class_for
 
   my $class = Object::Annotate->class_for(\%arg);
 
@@ -246,17 +232,22 @@ sub class_for {
   return $class;
 }
 
-=head2 C< default_dsn >
+=head2 default_dsn
 
-=head2 C< default_table >
+=head2 default_table
 
-=head2 C< default_user >
+=head2 default_user
 
-=head2 C< default_pass >
+=head2 default_pass
 
 These methods return the default database settings to use if none is specified
 when importing Object::Annotate.  The built-in behavior is to return the
 OBJ_ANNOTATE_DSN, OBJ_ANNOTATE_TABLE, etc. environment variables.
+
+=head2 default_base_class
+
+This method returns the class from which the annotator subclass will inherit.
+It defaults to Class::DBI.
 
 =cut
 
@@ -268,7 +259,7 @@ sub default_base_class  { 'Class::DBI' }
 
 sub _default_sequence {  }
 
-=head2 C< construct_cdbi_class >
+=head2 construct_cdbi_class
 
   my $new_class = Object::Annotate->construct_cdbi_class(\%arg);
 
@@ -300,7 +291,10 @@ sub construct_cdbi_class {
     @{$new_class . '::ISA'} = $arg->{base_class};
   };
 
-  $new_class->connection($arg->{dsn}, $arg->{user}, $arg->{pass});
+  if ($arg->{dsn}) {
+    $new_class->connection($arg->{dsn}, $arg->{user}, $arg->{pass});
+  }
+
   $new_class->table($arg->{table});
 
   my @columns = @{ $note_columns{mandatory} };
@@ -316,7 +310,7 @@ sub construct_cdbi_class {
   return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
 }
 
-=head2 C< build_annotator >
+=head2 build_annotator
 
   my $code = Object::Annotate->build_annotator(\%arg);
 
@@ -343,6 +337,7 @@ sub build_annotator {
     # This $arg purposefully shadows the previous; I don't want to enclose
     # those args. -- rjbs, 2006-01-05
     my ($self, $arg) = @_;
+    my $obj_class = $arg->{obj_class} || $self->moniker;
 
     my $id;
     if (ref $id_attr) {
@@ -375,7 +370,7 @@ sub build_annotator {
   return $annotator;
 }
 
-=head2 C< build_searcher >
+=head2 build_searcher
 
   my $code = Object::Annotate->build_searcher(\%arg);
 
@@ -398,6 +393,7 @@ sub build_searcher {
   
   my $searcher = sub {
     my ($self, $arg) = @_;
+    my $obj_class = $arg->{obj_class} || $self->moniker;
     $arg ||= {};
 
     my $id;
@@ -416,5 +412,3 @@ sub build_searcher {
 }
 
 '2. see footnote #1';
-
-

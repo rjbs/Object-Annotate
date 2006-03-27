@@ -3,13 +3,10 @@
 use strict;
 use warnings;
 
-use lib 't';
-use OAUtil;
+use lib 't/lib';
+use Test::ObjAnno::Util;
 
-use Test::More 'no_plan';
-
-BEGIN { OAUtil->build_empty_db; }
-
+use Test::More tests => 35;
 
 my $obj_a  = Some::Object->new;
 my $obj_b  = Some::Object->new;

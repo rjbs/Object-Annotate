@@ -1,4 +1,4 @@
-package OAUtil;
+package Test::ObjAnno::Util;
 
 use strict;
 use warnings;
@@ -32,9 +32,11 @@ sub build_empty_db {
   $dbh->do($schema);
 }
 
+BEGIN { build_empty_db; }
+
 {
   package Some::Object;
-  use Object::Annotate annotate => {
+  use Object::Annotate -annotator => {
     @db_pair,
     obj_class => 'thinger',
   };
@@ -45,7 +47,7 @@ sub build_empty_db {
 
 {
   package Some::Widget;
-  use Object::Annotate annotate => { @db_pair };
+  use Object::Annotate -annotator => { @db_pair };
 
   sub new { return bless {} => shift }
   sub id { return $_[0] + 0 };
@@ -54,7 +56,7 @@ sub build_empty_db {
 {
   package Some::Widget::Generic;
   our @ISA = qw(Some::Widget);
-  use Object::Annotate annotate => {
+  use Object::Annotate -annotator => {
     @db_pair,
     obj_class => 'widgeneric',
     id_attr   => \'generic',
