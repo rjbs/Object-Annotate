@@ -76,11 +76,15 @@ my %note_columns = (
   default   => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
-sub import {
-  my ($self, %arg) = @_;
-  my $caller = caller(0);
+use Sub::Exporter -setup => {
+  collectors => { annotate => \&_setup_class },
+};
 
-  $self->setup_class($caller, \%arg);
+sub _setup_class {
+  my ($arg, $name, $config, $import_args, $class, $into) = @_;
+
+  $class->setup_class($into, $arg);
+  return 1;
 }
 
 =head2 C< new >
