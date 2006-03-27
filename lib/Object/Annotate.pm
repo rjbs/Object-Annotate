@@ -179,7 +179,7 @@ sub setup_class {
 
   my $annotator = $self->build_annotator({
     %build_option,
-    set_time  => (scalar $arg->{db}{dsn} =~ /SQLite/),
+    set_time  => ($arg->{db}{dsn} && (scalar $arg->{db}{dsn} =~ /SQLite/)),
   });
 
   my $return = {
