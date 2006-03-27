@@ -307,7 +307,7 @@ sub construct_cdbi_class {
 
   $new_class->db_Main->{ AutoCommit } = 1;
 
-  return $class_for->{ $arg->{dsn} }->{ $arg->{table} } = $new_class;
+  return $class_for->{ $arg->{dsn} || '' }->{ $arg->{table} } = $new_class;
 }
 
 =head2 build_annotator
