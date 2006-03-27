@@ -115,9 +115,9 @@ sub new {
 These methods are not provided by Object::Annotate, but are installed into
 classes that use Object::Annotate.
 
-=head2 annotation_class
+=head2 annotations_class
 
-  my $annotation_class = Your::Class->annotation_class;
+  my $annotations_class = Your::Class->annotations_class;
 
 This method returns the name of the automatically constructed class that
 handles annotations for the class or object on which it is installed.
@@ -150,10 +150,11 @@ the Class::DBI C<search> method.
 
 =head2 setup_class
 
-  Object::Annotate->setup_class($target, \%arg);
+  Object::Annotate->setup_class('annotator', \%arg, \%col);
 
 This method does the heavy lifting needed to turn the class named by C<$target>
-into one that does annotation.
+into one that does annotation.  It is a group generator as described in
+L<Sub::Exporter>.
 
 =cut
 
@@ -168,6 +169,12 @@ sub setup_class {
 
   $arg->{db}{sequence} ||= $self->_default_sequence;
 
+  if ($arg->{noun} xor $arg->{verb}) {
+    Carp::croak 'you must supply either both or neither "noun" and "verb"';
+  } elsif (not ($arg->{noun} or $arg->{verb})) {
+    @$arg{qw(noun verb)} = qw(annotations annotate);
+  }
+
   my $class     = $self->class_for($arg);
 
   my $obj_class = $arg->{obj_class};
@@ -175,6 +182,9 @@ sub setup_class {
   my %build_option = (
     obj_class => $obj_class,
     id_attr   => $arg->{id_attr} || 'id',
+
+    noun => $arg->{noun},
+    verb => $arg->{verb},
   );
 
   my $annotator = $self->build_annotator({
@@ -183,9 +193,9 @@ sub setup_class {
   });
 
   my $return = {
-    annotation_class   => sub { $class },
-    annotate           => $annotator,
-    search_annotations => $self->build_searcher(\%build_option),
+    "$arg->{noun}_class"  => sub { $class },
+    $arg->{verb}          => $annotator,
+    "search_$arg->{noun}" => $self->build_searcher(\%build_option),
   };
 }
 
@@ -214,12 +224,15 @@ sub class_for {
   my $pass  = $arg->{db}{pass};
 
   # Try to find an already-constructed class.
-  my $class = exists $class_for->{ $dsn }
+  my $class = ! $arg->{extra_setup}
+           && exists $class_for->{ $dsn }
            && exists $class_for->{ $dsn }->{ $table }
            && $class_for->{ $dsn }->{ $table };
 
+  return $class if $class;
+
   # If we have no class built for this combination, build it.
-  $class ||= $self->construct_cdbi_class({
+  $class = $self->construct_cdbi_class({
     dsn      => $dsn,
     user     => $user,
     pass     => $pass,
@@ -228,6 +241,8 @@ sub class_for {
     sequence => $arg->{db}{sequence},
     base_class => $arg->{base_class},
   });
+
+  $arg->{extra_setup}->($class) if $arg->{extra_setup};
 
   return $class;
 }
@@ -333,6 +348,8 @@ sub build_annotator {
   my $id_attr   = $arg->{id_attr};
   my $set_time  = $arg->{set_time};
 
+  my $noun      = $arg->{noun};
+
   my $annotator = sub {
     # This $arg purposefully shadows the previous; I don't want to enclose
     # those args. -- rjbs, 2006-01-05
@@ -357,7 +374,8 @@ sub build_annotator {
 
     $attr{note_time} = time if $set_time;
 
-    $self->annotation_class->create({
+    my $class_name_method = "$noun\_class";
+    $self->$class_name_method->create({
       class     => $obj_class,
       object_id => $id,
       %attr,
@@ -390,6 +408,8 @@ sub build_searcher {
 
   my $obj_class = $arg->{obj_class};
   my $id_attr   = $arg->{id_attr};
+
+  my $noun      = $arg->{noun};
   
   my $searcher = sub {
     my ($self, $arg) = @_;
@@ -407,9 +427,9 @@ sub build_searcher {
     $arg->{class}     = $obj_class;
     $arg->{object_id} = $id if defined $id and not exists $arg->{object_id};
 
-    $self->annotation_class->search(%$arg);
+    my $class_name_method = "$noun\_class";
+    $self->$class_name_method->search(%$arg);
   }
 }
 
 '2. see footnote #1';
-

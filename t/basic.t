@@ -31,20 +31,20 @@ for (@generic_widgets) {
 }
 
 is(
-  $obj_a->annotation_class,
-  $obj_b->annotation_class,
+  $obj_a->annotations_class,
+  $obj_b->annotations_class,
   "both Some::Object objects have the same annotation class",
 );
 
 is(
-  $obj_a->annotation_class,
-  $widget->annotation_class,
+  $obj_a->annotations_class,
+  $widget->annotations_class,
   "and so does Some::Widget",
 );
 
-my $annotation_class = $obj_a->annotation_class;
+my $annotations_class = $obj_a->annotations_class;
 like(
-  $annotation_class,
+  $annotations_class,
   qr/\AObject::Annotate::Construct::0x/,
   "object annotation class looks like what we expect",
 );
@@ -98,6 +98,6 @@ for (@generic_widgets) {
   @notes = $generic_widgets[1]->search_annotations;
   is(@notes, 5, "there are five annotations for the 2nd generic widget, too");
 
-  @notes = Some::Object->annotation_class->retrieve_all;
-  is(@notes, 9, "there are four annotations in $annotation_class");
+  @notes = Some::Object->annotations_class->retrieve_all;
+  is(@notes, 9, "there are four annotations in $annotations_class");
 }
