@@ -77,7 +77,7 @@ my $current_suffix = 0;
 
 # The "id" column isn't here because we want it first, always.
 my %note_columns = (
-  mandatory => [ qw(class object_id note_time) ],
+  mandatory => [ qw(class object_id created) ],
   # I plan to use these values in the future. -- rjbs, 2006-01-13
   # default   => [ qw(event attr old_val new_val via comment expire_time) ],
   default   => [ qw(event attr old_val new_val via comment expire_time) ],
@@ -337,7 +337,7 @@ It takes the following arguments:
   obj_class - the class name to use for this class's log entries
   id_attr   - the method to use to get object ids; if a scalar ref, 
               the dereferenced string is used as a constant
-  set_time  - if true, the note_time value will be created as the current time
+  set_time  - if true, the created value will be created as the current time
 
 =cut
 
@@ -372,7 +372,7 @@ sub build_annotator {
       $attr{$_} = $arg->{$_};
     }
 
-    $attr{note_time} = time if $set_time;
+    $attr{created} = time if $set_time;
 
     my $class_name_method = "$noun\_class";
     $self->$class_name_method->create({

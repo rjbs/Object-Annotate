@@ -9,7 +9,7 @@ CREATE TABLE annotations (
   new_val   varchar(255),         -- what is new value?
   via       varchar(80),          -- what caused the change?
   comment   varchar(255),         -- the annotation, if any
-  note_time INTEGER NOT NULL,     -- when the annotation was made
+  created   INTEGER NOT NULL,     -- when the annotation was made
          -- DEFAULT strftime("%s", current_timestamp),
   expire_time INTEGER             -- when the annotation was made
          -- DEFAULT NULL          -- this may be null, for "never expire"
