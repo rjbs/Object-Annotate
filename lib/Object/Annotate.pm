@@ -166,7 +166,7 @@ sub setup_class {
   $arg->{db}{user}  ||= $self->default_user;
   $arg->{db}{pass}  ||= $self->default_pass;
 
-  $arg->{sequence}  ||= $self->_default_sequence;
+  $arg->{db}{sequence} ||= $self->_default_sequence;
 
   my $class     = $self->class_for($arg);
 
@@ -225,7 +225,7 @@ sub class_for {
     pass     => $pass,
     table    => $table,
     columns  => $arg->{columns},
-    sequence => $arg->{sequence},
+    sequence => $arg->{db}{sequence},
     base_class => $arg->{base_class},
   });
 
