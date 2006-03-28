@@ -378,14 +378,13 @@ sub build_annotator {
     $attr{created} = time if $set_time;
 
     my $class_name_method = "$noun\_class";
-    $self->$class_name_method->create({
+    my $request = $self->$class_name_method->create({
       class     => $obj_class,
       object_id => $id,
       %attr,
     });
 
-    # It's probably best to return nothing, for now. -- rjbs, 2006-01-05
-    return;
+    return $request;
   };
 
   return $annotator;
