@@ -189,6 +189,7 @@ sub setup_class {
 
   my $annotator = $self->build_annotator({
     %build_option,
+    columns   => $arg->{columns},
     set_time  => ($arg->{db}{dsn} && (scalar $arg->{db}{dsn} =~ /SQLite/)),
   });
 
@@ -367,7 +368,7 @@ sub build_annotator {
     # build up only those attributes we said, in %note_columns, we'd allow to
     # be passed in manually
     my %attr;
-    for (@{ $note_columns{default} }) {
+    for ($arg->{columns} ? @{ $arg->{columns} } : @{ $note_columns{default} }) {
       next unless exists $arg->{$_};
       $attr{$_} = $arg->{$_};
     }
