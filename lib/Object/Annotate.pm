@@ -59,8 +59,8 @@ accept the same arguments:
     table     - the table in which annotations are stored
     sequence  - if given, the Class::DBI table's primary key values comes from
                 this sequence; see L<Class::DBI> for more information
-    columns   - columns for the annotation table
 
+  columns   - columns for the annotation table
   obj_class - the class name to use for annotations for this class
               (defaults to Class->moniker, see UNIVERSAL::moniker)
   id_attr   - the object attribute to use for "id"; called as a method
