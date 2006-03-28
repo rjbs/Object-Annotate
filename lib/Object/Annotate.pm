@@ -349,6 +349,9 @@ sub build_annotator {
   my $id_attr   = $arg->{id_attr};
   my $set_time  = $arg->{set_time};
 
+  my @columns 
+    = $arg->{columns} ? @{ $arg->{columns} } : @{ $note_columns{default} };
+
   my $noun      = $arg->{noun};
 
   my $annotator = sub {
@@ -365,10 +368,9 @@ sub build_annotator {
       Carp::croak "couldn't get id for $self via $id_attr" unless $id;
     }
 
-    # build up only those attributes we said, in %note_columns, we'd allow to
-    # be passed in manually
+    # build up only those attributes we declared
     my %attr;
-    for ($arg->{columns} ? @{ $arg->{columns} } : @{ $note_columns{default} }) {
+    for (@columns) {
       next unless exists $arg->{$_};
       $attr{$_} = $arg->{$_};
     }
