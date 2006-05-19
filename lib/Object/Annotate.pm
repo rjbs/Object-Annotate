@@ -11,11 +11,11 @@ Object::Annotate - mix in logging-to-database to objects
 
  $Id$
 
-version 0.01
+version 0.020
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.020';
 
 use Carp ();
 use UNIVERSAL::moniker;
@@ -435,3 +435,4 @@ sub build_searcher {
 }
 
 '2. see footnote #1';
+

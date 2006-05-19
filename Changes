@@ -1,0 +1,5 @@
+Changelog for Object-Annotate
+
+0.020  2006-05-18
+       restructure parameter-passing
+       still not a stable interface!
