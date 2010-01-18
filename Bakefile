@@ -1,7 +1,0 @@
-<& /variables,
-   PREFIX => "/icg/pkg/local/annotate",
-&>
-
-<& /install/dir, src => "lib", dst => "perl-lib" &>
-
-<& /test &>
