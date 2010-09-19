@@ -1,5 +1,10 @@
 Changelog for Object-Annotate
 
-0.020  2006-05-18
-       restructure parameter-passing
-       still not a stable interface!
+0.021   2010-09-19
+        fix missing test prereq
+
+        you should use Mixin::Historian instead.  when it's released.
+
+0.020   2006-05-18
+        restructure parameter-passing
+        still not a stable interface!

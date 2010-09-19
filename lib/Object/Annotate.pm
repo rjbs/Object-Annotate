@@ -11,11 +11,11 @@ Object::Annotate - mix in logging-to-database to objects
 
  $Id$
 
-version 0.020
+version 0.021
 
 =cut
 
-our $VERSION = '0.020';
+our $VERSION = '0.021';
 
 use Carp ();
 use UNIVERSAL::moniker;

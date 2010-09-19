@@ -10,7 +10,6 @@ lib/Object/Annotate.pm
 Changes
 Makefile.PL
 MANIFEST			This list of files
-META.yml
 README
 sql/pgsql.sql
 sql/sqlite.sql
