@@ -1,26 +1,15 @@
-
-package Object::Annotate;
-use strict;
 use warnings;
-
-=head1 NAME
-
-Object::Annotate - mix in logging-to-database to objects
-
-=head1 VERSION
-
- $Id$
-
-version 0.021
-
-=cut
-
-our $VERSION = '0.021';
+use strict;
+package Object::Annotate;
+# ABSTRACT: mix in logging-to-database to objects (deprecated)
 
 use Carp ();
-use UNIVERSAL::moniker;
+use UNIVERSAL::moniker 0.01;
 
 =head1 SYNOPSIS
+
+B<Achtung!>  This library was an experiment.  It failed.  Consider using
+L<Mixin::ExtraFields> instead.
 
   package Your::Class;
   use Object::Annotate annotate => { dsn => '...', table => 'notes' };
@@ -29,14 +18,6 @@ use UNIVERSAL::moniker;
 
   my $object = Your::Class->new( ... );
   $object->annotate({ event => "created", comment => "(as example)" });
-
-=head1 WARNING
-
-The interface described here is still in real flux.  Feedback is welcome!
-If, however, you rely on this interface for production code, and then upgrade
-this module blindly, you are likely to see things break.
-
-I will remove this warning when the interface is less likely to change.
 
 =head1 DESCRIPTION
 
@@ -83,7 +64,7 @@ my %note_columns = (
   default   => [ qw(event attr old_val new_val via comment expire_time) ],
 );
 
-use Sub::Exporter -setup => {
+use Sub::Exporter 0.92 -setup => {
   groups => { annotator => \&setup_class },
 };
 
@@ -178,7 +159,7 @@ sub setup_class {
   my $class     = $self->class_for($arg);
 
   my $obj_class = $arg->{obj_class};
-  
+
   my %build_option = (
     obj_class => $obj_class,
     id_attr   => $arg->{id_attr} || 'id',
@@ -336,7 +317,7 @@ class.  It returns a coderef.
 It takes the following arguments:
 
   obj_class - the class name to use for this class's log entries
-  id_attr   - the method to use to get object ids; if a scalar ref, 
+  id_attr   - the method to use to get object ids; if a scalar ref,
               the dereferenced string is used as a constant
   set_time  - if true, the created value will be created as the current time
 
@@ -349,7 +330,7 @@ sub build_annotator {
   my $id_attr   = $arg->{id_attr};
   my $set_time  = $arg->{set_time};
 
-  my @columns 
+  my @columns
     = $arg->{columns} ? @{ $arg->{columns} } : @{ $note_columns{default} };
 
   my $noun      = $arg->{noun};
@@ -400,7 +381,7 @@ importing class.  It returns a coderef.
 It takes the following arguments:
 
   obj_class - the class name to use for this class's log entries
-  id_attr   - the method to use to get object ids; if a scalar ref, 
+  id_attr   - the method to use to get object ids; if a scalar ref,
               the dereferenced string is used as a constant
 
 =cut
@@ -412,7 +393,7 @@ sub build_searcher {
   my $id_attr   = $arg->{id_attr};
 
   my $noun      = $arg->{noun};
-  
+
   my $searcher = sub {
     my ($self, $arg) = @_;
     my $obj_class = $arg->{obj_class} || $self->moniker;
