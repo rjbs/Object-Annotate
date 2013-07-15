@@ -1,6 +1,7 @@
 Changelog for Object-Annotate
 
 {{$NEXT}}
+          require DBD::SQLite for testing
 
 0.022     2013-07-07 08:33:48 America/New_York
           repackage, mark dead
