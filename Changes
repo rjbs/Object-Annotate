@@ -1,6 +1,8 @@
 Changelog for Object-Annotate
 
 {{$NEXT}}
+
+0.024     2013-07-24 10:36:49 America/Los_Angeles
           add missing prereq on Class::DBI
 
 0.023     2013-07-14 21:31:57 America/New_York
