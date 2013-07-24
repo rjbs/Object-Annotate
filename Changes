@@ -1,6 +1,7 @@
 Changelog for Object-Annotate
 
 {{$NEXT}}
+          add missing prereq on Class::DBI
 
 0.023     2013-07-14 21:31:57 America/New_York
           require DBD::SQLite for testing
